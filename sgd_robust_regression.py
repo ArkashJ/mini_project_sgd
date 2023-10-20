@@ -73,3 +73,7 @@ def plot_iterates_and_squared_errors(paramiters, true_beta, opt_param, skip_epoc
     plt.yscale('log')
     sns.despine()
     plt.show()
+
+def main():
+    print(generate_data(10, 3, 0))
+main()
