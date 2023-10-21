@@ -50,6 +50,13 @@ class run_experiments:
             "Size of paramiters- \n",
             paramiters.shape,
         )
+    
+    def generate_param_and_sgd(self) -> tuple:
+        generate_seed = random.randint(0, 100)
+        true_beta, Y, Z = generate_data(self.N, self.D, generate_seed)
+        sgd_loss, grad_sgd_loss = make_sgd_robust_loss(Y, Z, self.NU)
+        init_param = np.zeros(self.D + 1)
+        return sgd_loss, grad_sgd_loss, init_param
 
     def estimate_x_tilda_k(
         self,
@@ -86,16 +93,11 @@ class run_experiments:
             x_star - x_iterate_average
         )
 
+    # x_start = argmin (1/N)* sum(robust_loss(psi, beta, nu, Y, Z)) + (1/2N)*sum(beta**2)
     def estimate_x_star(self) -> Optional[np.ndarray]:
-        # x_start = argmin (1/N)* sum(robust_loss(psi, beta, nu, Y, Z)) + (1/2N)*sum(beta**2)
-        # We can use the make_sgd_robust_loss function to get the value for x_star
         try:
-            generate_seed = random.randint(0, 100)
-            true_beta, Y, Z = generate_data(self.N, self.D, generate_seed)
-            sgd_loss, grad_sgd_loss = make_sgd_robust_loss(Y, Z, self.NU)
-            init_param = np.zeros(self.D + 1)
-
             # book page 7, https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize
+            sgd_loss, grad_sgd_loss, init_param = self.generate_param_and_sgd()
 
             res_minimize = sp.optimize.minimize(
                 sgd_loss,
@@ -105,30 +107,32 @@ class run_experiments:
             print("res_minimize- \n", res_minimize)
             print(f"res_minimize.x- \n {res_minimize.x}")
 
-            # call estimate_x_tilda_k
-            x_iterate, x_iterate_average = self.estimate_x_tilda_k(
-                grad_sgd_loss,
-                self.B,
-                self.N,
-                self.ETA,
-            )
-            # call find_norm
-            norm_x_star, norm_x_tilda_k = self.find_norm(
-                res_minimize.x, x_iterate, x_iterate_average
-            )
-            print(f"norm_x_star- \n {norm_x_star}")
-            print(f"norm_x_tilda_k- \n {norm_x_tilda_k}")
-
-            return res_minimize.x
+            return res_minimize.x, grad_sgd_loss
         except ValueError as e:
             print("Error in estimate_x_star")
             print(e)
+    
+    def test_norms(self):
+
+        x_star, grad_sgd_loss = self.estimate_x_star()
+        # call estimate_x_tilda_k
+        x_iterate, x_iterate_average = self.estimate_x_tilda_k(
+            grad_sgd_loss,
+            self.B,
+            self.N,
+            self.ETA,
+        )
+        norm_x_star, norm_x_tilda_k = self.find_norm(
+            x_star, x_iterate, x_iterate_average
+        )
+        print(f"norm_x_star- \n {norm_x_star}")
+        print(f"norm_x_tilda_k- \n {norm_x_tilda_k}")
 
 
 def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
     # experiments.init_param_test()
-    experiments.estimate_x_star()
+    experiments.test_norms()
 
 
 main()
