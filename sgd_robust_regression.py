@@ -1,6 +1,5 @@
 from autograd import grad
 import autograd.numpy as np
-from constant_values import *
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -96,17 +95,3 @@ def plot_iterates_and_squared_errors(
     plt.yscale("log")
     sns.despine()
     plt.show()
-
-
-def main():
-    NU, ETA, ETA_0, ALPHA, B, N, D = init_constants()
-    true_beta, Y, Z = generate_data(N, D, 0)
-    sgd_loss, grad_sgd_loss = make_sgd_robust_loss(Y, Z, NU)
-    init_param = np.zeros(D + 1)
-    paramiters = run_SGD(grad_sgd_loss, 10, init_param, ETA, 0, B, N)
-    # plot_iterates_and_squared_errors(
-    #     paramiters, true_beta, true_beta, 0, 10, N, B, include_psi=True
-    # )
-
-
-main()
