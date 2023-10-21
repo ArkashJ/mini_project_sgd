@@ -3,6 +3,10 @@ import autograd.numpy as np
 from sgd_robust_regression import *
 import matplotlib.pyplot as plt
 import seaborn as sns
+import scipy as sp
+from typing import Optional
+import random
+import math
 
 NU: int = 5
 ETA: float = 0.2
@@ -47,10 +51,68 @@ class run_experiments:
             paramiters.shape,
         )
 
+    def estimate_x_tilda_k(
+        self,
+        grad_loss,
+        batchsize,
+        n,
+        stepsize,
+        epochs: int = 5,
+        x=np.zeros(D + 1),
+        alpha=0,
+        avg_range: float = 0.5,
+    ) -> Optional[np.ndarray]:
+        params = run_sgd(grad_loss, epochs, x, stepsize, alpha, batchsize, n)
+
+        x_iterate = params[-1]
+        print("x_iterate- \n", x_iterate)
+
+        k = epochs * n // batchsize
+        lower_range, upper_range = math.floor(k * avg_range), k + 1
+        for i in range(lower_range, upper_range):
+            x_iterate += params[i]
+        x_iterate_average = x_iterate / (upper_range - lower_range)
+        print("x_iterate_average- \n", x_iterate_average)
+
+        return x_iterate, x_iterate_average
+
+    def estimate_x_star(self) -> Optional[np.ndarray]:
+        # x_start = argmin (1/N)* sum(robust_loss(psi, beta, nu, Y, Z)) + (1/2N)*sum(beta**2)
+        # We can use the make_sgd_robust_loss function to get the value for x_star
+        try:
+            generate_seed = random.randint(0, 100)
+            true_beta, Y, Z = generate_data(self.N, self.D, generate_seed)
+            sgd_loss, grad_sgd_loss = make_sgd_robust_loss(Y, Z, self.NU)
+            init_param = np.zeros(self.D + 1)
+            
+            # book page 7, https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize 
+
+            res_minimize = sp.optimize.minimize(
+                sgd_loss,
+                init_param,
+                args=(np.arange(self.N),),
+            )
+            print("res_minimize- \n", res_minimize)
+            print(f"res_minimize.x- \n {res_minimize.x}")
+
+            # call estimate_x_tilda_k
+            x_iterate, x_iterate_average = self.estimate_x_tilda_k(
+                grad_sgd_loss,
+                self.B,
+                self.N,
+                self.ETA,
+                    )
+
+            return res_minimize.x
+        except ValueError as e:
+            print("Error in estimate_x_star")
+            print(e)
+
 
 def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
-    experiments.init_param_test()
+    # experiments.init_param_test()
+    experiments.estimate_x_star()
 
 
 main()

@@ -4,51 +4,49 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def _robust_loss(psi, beta, nu, Y, Z):
-    scaled_sq_errors = np.exp(-2 * psi) * (np.dot(Z, beta) - Y) ** 2
+def _robust_loss(psi, beta, nu, y, z):
+    scaled_sq_errors = np.exp(-2 * psi) * (np.dot(z, beta) - y) ** 2
     if nu == np.inf:
         return scaled_sq_errors / 2 + psi
     return (nu + 1) / 2 * np.log(1 + scaled_sq_errors / nu) + psi
 
 
-def make_sgd_robust_loss(Y, Z, nu):
-    N = Y.size
+def make_sgd_robust_loss(y, z, nu):
+    n = y.size
     sgd_loss = lambda param, inds: np.mean(
-        _robust_loss(param[0], param[1:], nu, Y[inds], Z[inds])
-    ) + np.sum(param**2) / (2 * N)
+        _robust_loss(param[0], param[1:], nu, y[inds], z[inds])
+    ) + np.sum(param**2) / (2 * n)
     grad_sgd_loss = grad(sgd_loss)
     return sgd_loss, grad_sgd_loss
 
 
-def generate_data(N, D, seed):
+def generate_data(n, d, seed):
     rng = np.random.default_rng(seed)
     # generate multivariate t covariates with 10 degrees
     # of freedom and non-diagonal covariance
     t_dof = 10
-    locs = np.arange(D).reshape((D, 1))
+    locs = np.arange(d).reshape((d, 1))
     cov = (t_dof - 2) / t_dof * np.exp(-((locs - locs.T) ** 2) / 4)
-    print("Getting the locs- \n", locs, "Getting the cov- \n", cov)
-    Z = rng.multivariate_normal(np.zeros(D), cov, size=N)
-    Z *= np.sqrt(t_dof / rng.chisquare(t_dof, size=(N, 1)))
-    print("Getting the Z- \n", Z, "Size of Z- \n", Z.shape)
-    # generate responses using regression coefficients beta = (1, 2, ..., D)
+    z = rng.multivariate_normal(np.zeros(d), cov, size=n)
+    z *= np.sqrt(t_dof / rng.chisquare(t_dof, size=(n, 1)))
+    # generate responses using regression coefficients beta = (1, 2, ..., d)
     # and t-distributed noise
-    true_beta = np.arange(1, D + 1)
-    Y = Z.dot(true_beta) + rng.standard_t(t_dof, size=N)
+    true_beta = np.arange(1, d + 1)
+    y = z.dot(true_beta) + rng.standard_t(t_dof, size=n)
     # for simplicity, center responses
-    Y = Y - np.mean(Y)
-    return true_beta, Y, Z
+    y = y - np.mean(y)
+    return true_beta, y, z
 
 
-def run_SGD(
-    grad_loss, epochs, init_param, init_stepsize, stepsize_decayrate, batchsize, N
+def run_sgd(
+    grad_loss, epochs, init_param, init_stepsize, stepsize_decayrate, batchsize, n
 ):
-    K = (epochs * N) // batchsize
-    D = init_param.size
-    paramiters = np.zeros((K + 1, D))
+    k = (epochs * n) // batchsize
+    d = init_param.size
+    paramiters = np.zeros((k + 1, d))
     paramiters[0] = init_param
-    for k in range(K):
-        inds = np.random.choice(N, batchsize)
+    for k in range(k):
+        inds = np.random.choice(n, batchsize)
         stepsize = init_stepsize / (k + 1) ** stepsize_decayrate
         paramiters[k + 1] = paramiters[k] - stepsize * grad_loss(paramiters[k], inds)
     return paramiters
