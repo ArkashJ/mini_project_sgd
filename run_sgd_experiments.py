@@ -76,6 +76,16 @@ class run_experiments:
 
         return x_iterate, x_iterate_average
 
+    def find_norm(
+        self,
+        x_star: np.ndarray,
+        x_iterate: np.ndarray,
+        x_iterate_average: np.ndarray,
+    ) -> float:
+        return np.linalg.norm(x_star - x_iterate), np.linalg.norm(
+            x_star - x_iterate_average
+        )
+
     def estimate_x_star(self) -> Optional[np.ndarray]:
         # x_start = argmin (1/N)* sum(robust_loss(psi, beta, nu, Y, Z)) + (1/2N)*sum(beta**2)
         # We can use the make_sgd_robust_loss function to get the value for x_star
@@ -84,8 +94,8 @@ class run_experiments:
             true_beta, Y, Z = generate_data(self.N, self.D, generate_seed)
             sgd_loss, grad_sgd_loss = make_sgd_robust_loss(Y, Z, self.NU)
             init_param = np.zeros(self.D + 1)
-            
-            # book page 7, https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize 
+
+            # book page 7, https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize
 
             res_minimize = sp.optimize.minimize(
                 sgd_loss,
@@ -101,7 +111,13 @@ class run_experiments:
                 self.B,
                 self.N,
                 self.ETA,
-                    )
+            )
+            # call find_norm
+            norm_x_star, norm_x_tilda_k = self.find_norm(
+                res_minimize.x, x_iterate, x_iterate_average
+            )
+            print(f"norm_x_star- \n {norm_x_star}")
+            print(f"norm_x_tilda_k- \n {norm_x_tilda_k}")
 
             return res_minimize.x
         except ValueError as e:
