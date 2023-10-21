@@ -50,7 +50,7 @@ class run_experiments:
             "Size of paramiters- \n",
             paramiters.shape,
         )
-    
+
     def generate_param_and_sgd(self) -> tuple:
         generate_seed = random.randint(0, 100)
         true_beta, Y, Z = generate_data(self.N, self.D, generate_seed)
@@ -111,9 +111,8 @@ class run_experiments:
         except ValueError as e:
             print("Error in estimate_x_star")
             print(e)
-    
-    def test_norms(self):
 
+    def test_norms(self):
         x_star, grad_sgd_loss = self.estimate_x_star()
         # call estimate_x_tilda_k
         x_iterate, x_iterate_average = self.estimate_x_tilda_k(
