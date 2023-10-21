@@ -17,18 +17,6 @@ N: int = 10000
 D: int = 10
 
 
-def print_constants() -> None:
-    print(
-        f"Batch size: {B}\n"
-        f"Number of samples: {N}\n"
-        f"Number of features: {D}\n"
-        f"Degrees of freedom: {NU}\n"
-        f"Initial step size: {ETA_0}\n"
-        f"Decay rate: {ALPHA}\n"
-        f"step size: {ETA}\n"
-    )
-
-
 class run_experiments:
     def __init__(self, N, D, NU, ETA, ETA_0, ALPHA, B):
         self.N = N
@@ -39,16 +27,15 @@ class run_experiments:
         self.ALPHA = ALPHA
         self.B = B
 
-    def init_param_test(self) -> None:
-        true_beta, Y, Z = generate_data(self.N, self.D, 0)
-        sgd_loss, grad_sgd_loss = make_sgd_robust_loss(Y, Z, self.NU)
-        init_param = np.zeros(self.D + 1)
-        paramiters = run_SGD(grad_sgd_loss, 10, init_param, self.ETA, 0, self.B, self.N)
+    def print_constants(self) -> None:
         print(
-            "Final paramiters- \n",
-            paramiters,
-            "Size of paramiters- \n",
-            paramiters.shape,
+            f"Batch size: {self.B}\n"
+            f"Number of samples: {self.N}\n"
+            f"Number of features: {self.D}\n"
+            f"Degrees of freedom: {self.NU}\n"
+            f"Initial step size: {self.ETA_0}\n"
+            f"Decay rate: {self.ALPHA}\n"
+            f"step size: {self.ETA}\n"
         )
 
     def generate_param_and_sgd(self) -> tuple:
@@ -71,15 +58,20 @@ class run_experiments:
     ) -> Optional[np.ndarray]:
         params = run_sgd(grad_loss, epochs, x, stepsize, alpha, batchsize, n)
 
-        x_iterate = params[-1]
-
+        x_iterate_ = params[-1]
+         
         k = epochs * n // batchsize
         lower_range, upper_range = math.floor(k * avg_range), k + 1
+        x_iterate = 0
+            
+        # find the iterate average from the last 50% of the iterations
+
+
         for i in range(lower_range, upper_range):
             x_iterate += params[i]
         x_iterate_average = x_iterate / (upper_range - lower_range)
-
-        return x_iterate, x_iterate_average
+        
+        return x_iterate_, x_iterate_average
 
     # x_start = argmin (1/N)* sum(robust_loss(psi, beta, nu, Y, Z)) + (1/2N)*sum(beta**2)
     def estimate_x_star(self) -> Optional[np.ndarray]:
@@ -92,6 +84,7 @@ class run_experiments:
                 init_param,
                 args=(np.arange(self.N),),
             )
+
             print(f"res_minimize.x- \n {res_minimize.x}")
 
             return res_minimize.x, grad_sgd_loss
@@ -105,7 +98,21 @@ class run_experiments:
         x_iterate: np.ndarray,
         x_iterate_average: np.ndarray,
     ) -> float:
-        x_iterate = np.linalg.norm(x_star - x_iterate)
+        print("x-star", x_star)
+        temp = []
+        print(type(x_iterate))
+        # loop through numpy.float64
+        difference = x_star - x_iterate
+        print(f"difference- \n {difference}")
+        for i in range(x_iterate.size):
+            val = x_star[i]-x_iterate[i]
+            print(f"val- \n {val}")
+            val = val**2
+            temp.append((x_star[i]-x_iterate[i])**2)
+            print(f"val- \n {val}")
+        x_iterate = np.array(temp)
+        x_iterate = np.sqrt(x_iterate)
+        x_iterate = np.linalg.norm(x_star - x_iterate) 
         x_iterate_average = np.linalg.norm(x_star - x_iterate_average)
         print(f"norm_x_star- \n {x_iterate}")
         print(f"norm_x_tilda_k- \n {x_iterate_average}")
@@ -123,7 +130,7 @@ class run_experiments:
             self.ETA,
             10,
         )
-
+        print(f"x_iterate- \n {x_iterate}")
         norm_x_star, norm_x_tilda_k = self.find_norm(
             x_star, x_iterate, x_iterate_average
         )
@@ -131,7 +138,7 @@ class run_experiments:
     def find_best_num_epochs(self):
         epoch_increase = 5
         epoch1 = [i for i in range(1, 100, epoch_increase)]
-        epoch2 = [i for i in range(100, 1000, epoch_increase * 10)]
+        epoch2 = [200, 300, 400]
 
         x_star, grad_sgd_loss = self.estimate_x_star()
         store_x_star = [0] * len(epoch1) + [0] * len(epoch2)
@@ -171,6 +178,8 @@ class run_experiments:
 def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
     # experiments.init_param_test()
-    experiments.find_best_num_epochs()
+    # experiments.find_best_num_epochs()
+    experiments.test_norms()
+
 
 main()
