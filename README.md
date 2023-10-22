@@ -15,7 +15,7 @@ Change the batch size
 ## Task 5
 Keep changing the value of nu and see how the error changes
 
-## Run the code
+## Setting up the code
 ```
 mkdir mini_sgd_project
 cd mini_sgd_project
