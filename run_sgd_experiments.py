@@ -116,6 +116,7 @@ class run_experiments:
             )
 
     def find_best_initilization_param(self) -> None:
+        init_param = np.zeros(self.D + 1)
         init_param_multivariate_normal = np.array(
             [
                 np.random.multivariate_normal(init_param, np.identity(self.D + 1))
@@ -125,20 +126,20 @@ class run_experiments:
         init_param_uniform = np.array(
             [np.random.uniform(-1, 1, self.D + 1) for i in range(100)]
         )
-        print("Testing out values with multivariate normal")
+        print("---------------- \n Testing out values with multivariate normal")
         self.test_initialization(init_param_multivariate_normal)
 
-        print("Testing out values with uniform")
+        print("---------------- \n Testing out values with uniform")
         self.test_initialization(init_param_uniform)
 
-    def test_initialization(self, init_param_: np.ndarray) -> None:
-        norms_vec = np.zeros(len(init_param_))
+    def test_initialization(self, init_param_vec: np.ndarray) -> None:
+        norms_vec = np.zeros(len(init_param_vec))
         x_star, grad_sgd_loss = self.estimate_x_star()
         max_change, min_change = 0, 0
         max_norm, min_norm = 0, 0
 
-        for i in range(len(init_param_)):
-            norms_vec[i] = self.find_norm(x_star, init_param_[i]) ** 2
+        for i in range(len(init_param_vec)):
+            norms_vec[i] = self.find_norm(x_star, init_param_vec[i]) ** 2
             if i == 0:
                 min_norm = norms_vec[i]
             if i > 0:
@@ -151,17 +152,17 @@ class run_experiments:
             if norms_vec[i] < min_norm:
                 min_norm = norms_vec[i]
 
-            print(
-                f"Iteration {i}\t, norm is {norms_vec[i]} \t, \ninit_param is {init_param_multivariate_normal[i]}\n"
-            )
+            # print(
+            #     f"Iteration {i}\t, norm is {norms_vec[i]} \t, \ninit_param is {init_param_vec[i]}\n"
+            # )
         average_change = np.mean(norms_vec)
         # find quintiles
         print(
-            f"Quintiles are as follows: \n {np.quantile(norms_vec, [0.2, 0.4, 0.6, 0.8])}"
+            f"\nQuintiles are as follows: \n {np.quantile(norms_vec, [0.2, 0.4, 0.6, 0.8])}"
         )
 
         print(
-            f"Statistics are as follows: \n max_change: {max_change} \n min_change: {min_change} \n average_norm: {average_change} \n min_norm: {min_norm} \n max_norm: {max_norm}"
+            f"\nStatistics are as follows: \n max_change: {max_change} \n min_change: {min_change} \n average_norm: {average_change} \n min_norm: {min_norm} \n max_norm: {max_norm}\n"
         )
 
 
@@ -169,7 +170,7 @@ def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
     # experiments.init_param_test()
     # experiments.find_best_num_epochs()
-    experiments.test_initialization()
+    experiments.find_best_initilization_param()
 
 
 main()
