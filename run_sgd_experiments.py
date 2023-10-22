@@ -167,7 +167,9 @@ class run_experiments:
 
         print("---------------- \n Testing out values with uniform")
         self.test_initialization(init_param_uniform)
-
+    
+    def changing_stepsize_initstepsize_decayrate(self) -> None:
+        pass
 
 def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
