@@ -4,6 +4,7 @@ import scipy as sp
 from typing import Optional
 import random
 import math
+from tqdm import tqdm
 
 # define constants
 NU: int = 5
@@ -25,7 +26,6 @@ class run_experiments:
         self.ETA_0 = ETA_0
         self.ALPHA = ALPHA
         self.B = B
-        self.print_constants()
 
     def print_constants(self) -> None:
         print(
@@ -104,7 +104,7 @@ class run_experiments:
     def find_best_num_epochs(self) -> None:
         epochs = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 100, 200, 500]
         x_star, grad_sgd_loss = self.estimate_x_star()
-        for epoch in epochs:
+        for epoch in tqdm(epochs):
             print(f"epoch- \n {epoch}")
             x_iterate, x_iterate_average = self.estimate_x_tilda_k(
                 grad_sgd_loss,
@@ -115,30 +115,14 @@ class run_experiments:
                 x_star,
             )
 
-    def find_best_initilization_param(self) -> None:
-        init_param = np.zeros(self.D + 1)
-        init_param_multivariate_normal = np.array(
-            [
-                np.random.multivariate_normal(init_param, np.identity(self.D + 1))
-                for i in range(100)
-            ]
-        )
-        init_param_uniform = np.array(
-            [np.random.uniform(-1, 1, self.D + 1) for i in range(100)]
-        )
-        print("---------------- \n Testing out values with multivariate normal")
-        self.test_initialization(init_param_multivariate_normal)
-
-        print("---------------- \n Testing out values with uniform")
-        self.test_initialization(init_param_uniform)
-
     def test_initialization(self, init_param_vec: np.ndarray) -> None:
         norms_vec = np.zeros(len(init_param_vec))
         x_star, grad_sgd_loss = self.estimate_x_star()
         max_change, min_change = 0, 0
         max_norm, min_norm = 0, 0
 
-        for i in range(len(init_param_vec)):
+        len_arr = len(init_param_vec)
+        for i in tqdm(range(len_arr)):
             norms_vec[i] = self.find_norm(x_star, init_param_vec[i]) ** 2
             if i == 0:
                 min_norm = norms_vec[i]
@@ -164,6 +148,24 @@ class run_experiments:
         print(
             f"\nStatistics are as follows: \n max_change: {max_change} \n min_change: {min_change} \n average_norm: {average_change} \n min_norm: {min_norm} \n max_norm: {max_norm}\n"
         )
+
+    def find_best_initilization_param(self) -> None:
+        init_param = np.zeros(self.D + 1)
+        init_param_multivariate_normal = np.array(
+            [
+                np.random.multivariate_normal(init_param, np.identity(self.D + 1))
+                for i in range(1000)
+            ]
+        )
+        init_param_uniform = np.array(
+            [np.random.uniform(-1, 1, self.D + 1) for i in range(1000)]
+        )
+
+        print("---------------- \n Testing out values with multivariate normal")
+        self.test_initialization(init_param_multivariate_normal)
+
+        print("---------------- \n Testing out values with uniform")
+        self.test_initialization(init_param_uniform)
 
 
 def main():
