@@ -115,12 +115,7 @@ class run_experiments:
                 x_star,
             )
 
-    def test_initialization(self) -> None:
-        x_star, grad_sgd_loss = self.estimate_x_star()
-        init_param = np.zeros(self.D + 1)
-        init_param_test_matrix = np.array(
-            [init_param + np.random.normal(0, 1, self.D + 1) for i in range(100)]
-        )
+    def find_best_initilization_param(self) -> None:
         init_param_multivariate_normal = np.array(
             [
                 np.random.multivariate_normal(init_param, np.identity(self.D + 1))
@@ -130,13 +125,20 @@ class run_experiments:
         init_param_uniform = np.array(
             [np.random.uniform(-1, 1, self.D + 1) for i in range(100)]
         )
-        norms_vec = np.zeros(100)
-        max_change, min_change, average_change = 0, 0, 0
+        print("Testing out values with multivariate normal")
+        self.test_initialization(init_param_multivariate_normal)
+
+        print("Testing out values with uniform")
+        self.test_initialization(init_param_uniform)
+
+    def test_initialization(self, init_param_: np.ndarray) -> None:
+        norms_vec = np.zeros(len(init_param_))
+        x_star, grad_sgd_loss = self.estimate_x_star()
+        max_change, min_change = 0, 0
         max_norm, min_norm = 0, 0
-        for i in range(len(init_param_multivariate_normal)):
-            norms_vec[i] = (
-                self.find_norm(x_star, init_param_multivariate_normal[i]) ** 2
-            )
+
+        for i in range(len(init_param_)):
+            norms_vec[i] = self.find_norm(x_star, init_param_[i]) ** 2
             if i == 0:
                 min_norm = norms_vec[i]
             if i > 0:
@@ -154,9 +156,14 @@ class run_experiments:
             )
         average_change = np.mean(norms_vec)
         # find quintiles
-        print(f"Quintiles are as follows: \n {np.quantile(norms_vec, [0.2, 0.4, 0.6, 0.8])}")
+        print(
+            f"Quintiles are as follows: \n {np.quantile(norms_vec, [0.2, 0.4, 0.6, 0.8])}"
+        )
 
-        print(f"Statistics are as follows: \n max_change: {max_change} \n min_change: {min_change} \n average_norm: {average_change} \n min_norm: {min_norm} \n max_norm: {max_norm}")
+        print(
+            f"Statistics are as follows: \n max_change: {max_change} \n min_change: {min_change} \n average_norm: {average_change} \n min_norm: {min_norm} \n max_norm: {max_norm}"
+        )
+
 
 def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
