@@ -114,7 +114,7 @@ class run_experiments:
                 epoch,
                 x_star,
             )
-
+    # Given a list of initializations, find the norm^2 for each of them
     def test_initialization(self, init_param_vec: np.ndarray) -> None:
         norms_vec = np.zeros(len(init_param_vec))
         x_star, grad_sgd_loss = self.estimate_x_star()
@@ -149,6 +149,7 @@ class run_experiments:
             f"\nStatistics are as follows: \n max_change: {max_change} \n min_change: {min_change} \n average_norm: {average_change} \n min_norm: {min_norm} \n max_norm: {max_norm}\n"
         )
 
+    # Run multiple experiments to find the best initialization
     def find_best_initilization_param(self) -> None:
         init_param = np.zeros(self.D + 1)
         init_param_multivariate_normal = np.array(
