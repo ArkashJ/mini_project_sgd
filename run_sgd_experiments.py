@@ -114,6 +114,7 @@ class run_experiments:
                 epoch,
                 x_star,
             )
+
     # Given a list of initializations, find the norm^2 for each of them
     def test_initialization(self, init_param_vec: np.ndarray) -> None:
         norms_vec = np.zeros(len(init_param_vec))
@@ -167,19 +168,49 @@ class run_experiments:
 
         print("---------------- \n Testing out values with uniform")
         self.test_initialization(init_param_uniform)
-    
-    def changing_stepsize_initstepsize_decayrate(self) -> None:
+
+    def changing_stepsize(self) -> None:
         # for constant stepsize, use ETA
-        eta_vec = np.array([i*0.1 for i in range(1, 30)])
+        eta_vec = np.array([i * 0.1 for i in range(1, 30)])
+
+        x_star, grad_sgd_loss = self.estimate_x_star()
+        for eta_val in tqdm(eta_vec):
+            x_iterate, x_iterate_average = self.estimate_x_tilda_k(
+                grad_sgd_loss,
+                self.B,
+                self.N,
+                eta_val,
+                10,
+                x_star,
+            )
+
+    def decreasing_stepsize(self) -> None:
         # For decreasing stepsize, use ETA_0, ALPHA
-        eta_0_vec = np.array([np.linspace(5, 10, 10)])
-        print(eta_0_vec)
+        eta_0_vec = np.array([5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
+        alpha = np.array([0.5 + np.random.uniform(0, 0.5) for i in range(10)])
+        print(f"eta_0_vec is {eta_0_vec}")
+        print(f"alpha is {alpha}")
+        x_star, grad_sgd_loss = self.estimate_x_star()
+
+        for eta_0_val in tqdm(eta_0_vec):
+            for alpha_val in tqdm(alpha):
+                x_iterate, x_iterate_average = self.estimate_x_tilda_k(
+                    grad_sgd_loss,
+                    self.B,
+                    self.N,
+                    eta_0_val,
+                    10,
+                    x_star,
+                    alpha_val,
+                )
+
 
 def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
     # experiments.init_param_test()
     # experiments.find_best_num_epochs()
-    #experiments.find_best_initilization_param()
+    # experiments.find_best_initilization_param()
     experiments.changing_stepsize_initstepsize_decayrate()
+
 
 main()
