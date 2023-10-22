@@ -207,7 +207,16 @@ class run_experiments:
     def changing_gradient_noise(self) -> None:
         # change B to see its effect on the algorithm
         B_vec = np.array([i * 10 for i in range(1, 20)])
-        pass
+        x_star, grad_sgd_loss = self.estimate_x_star()
+        for B_val in tqdm(B_vec):
+            x_iterate, x_iterate_average = self.estimate_x_tilda_k(
+                grad_sgd_loss,
+                B_val,
+                self.N,
+                self.ETA,
+                10,
+                x_star,
+            )
 
     def changing_loss(self) -> None:
         nu_vec = np.array([10, 50, 100, 200, 300, 400, 500, 1000, 2000])
