@@ -169,13 +169,17 @@ class run_experiments:
         self.test_initialization(init_param_uniform)
     
     def changing_stepsize_initstepsize_decayrate(self) -> None:
-        pass
+        # for constant stepsize, use ETA
+        eta_vec = np.array([i*0.1 for i in range(1, 30)])
+        # For decreasing stepsize, use ETA_0, ALPHA
+        eta_0_vec = np.array([np.linspace(5, 10, 10)])
+        print(eta_0_vec)
 
 def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
     # experiments.init_param_test()
     # experiments.find_best_num_epochs()
-    experiments.find_best_initilization_param()
-
+    #experiments.find_best_initilization_param()
+    experiments.changing_stepsize_initstepsize_decayrate()
 
 main()
