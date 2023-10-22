@@ -217,6 +217,8 @@ class run_experiments:
                 10,
                 x_star,
             )
+        ceil_Val = self.NU / self.B
+        print(f"Ceiling value is {ceil_Val}")
 
     def changing_loss(self) -> None:
         nu_vec = np.array([10, 50, 100, 200, 300, 400, 500, 1000, 2000])
@@ -275,7 +277,8 @@ def main():
     # experiments.find_best_initilization_param()
     # experiments.changing_stepsize_initstepsize_decayrate()
     # experiments.decreasing_stepsize()
-    experiments.changing_loss()
+    # experiments.changing_loss()
+    experiments.changing_gradient_noise()
 
 
 main()
