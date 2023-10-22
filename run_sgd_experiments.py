@@ -204,13 +204,61 @@ class run_experiments:
                     alpha_val,
                 )
 
+    def changing_gradient_noise(self) -> None:
+        # change B to see its effect on the algorithm
+        B_vec = np.array([i * 10 for i in range(1, 20)])
+        pass
+
+    def changing_loss(self) -> None:
+        nu_vec = np.array([10, 50, 100, 200, 300, 400, 500, 1000, 2000])
+        nu_inf = np.array([np.inf])
+
+        generate_seed = random.randint(0, 100)
+        true_beta, Y, Z = generate_data(self.N, self.D, generate_seed)
+        init_param = np.zeros(self.D + 1)
+
+        for nu_val in tqdm(nu_vec):
+            sgd_loss, grad_sgd_loss = make_sgd_robust_loss(Y, Z, nu_val)
+            res_minimize = sp.optimize.minimize(
+                sgd_loss,
+                init_param,
+                args=(np.arange(self.N),),
+            )
+            x_star = res_minimize.x
+            x_iterate, x_iterate_average = self.estimate_x_tilda_k(
+                grad_sgd_loss,
+                self.B,
+                self.N,
+                self.ETA,
+                10,
+                x_star,
+            )
+        sgd_loss, grad_sgd_loss = make_sgd_robust_loss(Y, Z, np.inf)
+        print("Infinite nu")
+        res_minimize = sp.optimize.minimize(
+            sgd_loss,
+            init_param,
+            args=(np.arange(self.N),),
+        )
+        x_star = res_minimize.x
+        x_iterate, x_iterate_average = self.estimate_x_tilda_k(
+            grad_sgd_loss,
+            self.B,
+            self.N,
+            self.ETA,
+            10,
+            x_star,
+        )
+
 
 def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
     # experiments.init_param_test()
     # experiments.find_best_num_epochs()
     # experiments.find_best_initilization_param()
-    experiments.changing_stepsize_initstepsize_decayrate()
+    # experiments.changing_stepsize_initstepsize_decayrate()
+    # experiments.decreasing_stepsize()
+    experiments.changing_loss()
 
 
 main()
