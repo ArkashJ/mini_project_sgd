@@ -49,7 +49,6 @@ def run_sgd(
         inds = np.random.choice(n, batchsize)
         stepsize = init_stepsize / (k + 1) ** stepsize_decayrate
         paramiters[k + 1] = paramiters[k] - stepsize * grad_loss(paramiters[k], inds)
-    print(paramiters[k])
     return paramiters
     
 

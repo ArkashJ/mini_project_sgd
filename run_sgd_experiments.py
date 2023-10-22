@@ -1,13 +1,11 @@
-from autograd import grad
 import autograd.numpy as np
 from sgd_robust_regression import *
-import matplotlib.pyplot as plt
-import seaborn as sns
 import scipy as sp
 from typing import Optional
 import random
 import math
 
+# define constants
 NU: int = 5
 ETA: float = 0.2
 ETA_0: float = 5
@@ -17,6 +15,7 @@ N: int = 10000
 D: int = 10
 
 
+# class to run experiments
 class run_experiments:
     def __init__(self, N, D, NU, ETA, ETA_0, ALPHA, B):
         self.N = N
@@ -26,6 +25,7 @@ class run_experiments:
         self.ETA_0 = ETA_0
         self.ALPHA = ALPHA
         self.B = B
+        self.print_constants()
 
     def print_constants(self) -> None:
         print(
@@ -38,6 +38,7 @@ class run_experiments:
             f"step size: {self.ETA}\n"
         )
 
+    # Get the sgd_loss, grad_sgd_loss for generated data
     def generate_param_and_sgd(self) -> tuple:
         generate_seed = random.randint(0, 100)
         true_beta, Y, Z = generate_data(self.N, self.D, generate_seed)
@@ -45,33 +46,14 @@ class run_experiments:
         init_param = np.zeros(self.D + 1)
         return sgd_loss, grad_sgd_loss, init_param
 
-    def estimate_x_tilda_k(
+    # Helper function to find the norm
+    def find_norm(
         self,
-        grad_loss,
-        batchsize,
-        n,
-        stepsize,
-        epochs,
-        x=np.zeros(D + 1),
-        alpha=0,
-        avg_range: float = 0.5,
-    ) -> Optional[np.ndarray]:
-        params = run_sgd(grad_loss, epochs, x, stepsize, alpha, batchsize, n)
-
-        x_iterate_ = params[-1]
-         
-        k = epochs * n // batchsize
-        lower_range, upper_range = math.floor(k * avg_range), k + 1
-        x_iterate = 0
-            
-        # find the iterate average from the last 50% of the iterations
-
-
-        for i in range(lower_range, upper_range):
-            x_iterate += params[i]
-        x_iterate_average = x_iterate / (upper_range - lower_range)
-        
-        return x_iterate_, x_iterate_average
+        x_star: np.ndarray,
+        iterate_params: np.ndarray,
+    ) -> float:
+        x_iterate = np.linalg.norm(x_star - iterate_params)
+        return x_iterate
 
     # x_start = argmin (1/N)* sum(robust_loss(psi, beta, nu, Y, Z)) + (1/2N)*sum(beta**2)
     def estimate_x_star(self) -> Optional[np.ndarray]:
@@ -92,94 +74,95 @@ class run_experiments:
             print("Error in estimate_x_star")
             print(e)
 
-    def find_norm(
+    # Find the norm^2 for x_iterate and x_iterate_average
+    def estimate_x_tilda_k(
         self,
+        grad_loss: np.ndarray,
+        batchsize: int,
+        n: int,
+        stepsize: int,
+        epochs: int,
         x_star: np.ndarray,
-        x_iterate: np.ndarray,
-        x_iterate_average: np.ndarray,
-    ) -> float:
-        print("x-star", x_star)
-        temp = []
-        print(type(x_iterate))
-        # loop through numpy.float64
-        difference = x_star - x_iterate
-        print(f"difference- \n {difference}")
-        for i in range(x_iterate.size):
-            val = x_star[i]-x_iterate[i]
-            print(f"val- \n {val}")
-            val = val**2
-            temp.append((x_star[i]-x_iterate[i])**2)
-            print(f"val- \n {val}")
-        x_iterate = np.array(temp)
-        x_iterate = np.sqrt(x_iterate)
-        x_iterate = np.linalg.norm(x_star - x_iterate) 
-        x_iterate_average = np.linalg.norm(x_star - x_iterate_average)
-        print(f"norm_x_star- \n {x_iterate}")
-        print(f"norm_x_tilda_k- \n {x_iterate_average}")
-        return np.linalg.norm(x_star - x_iterate), np.linalg.norm(
-            x_star - x_iterate_average
-        )
+        x=np.zeros(D + 1),
+        alpha=0,
+        avg_range: float = 0.5,
+    ) -> np.ndarray:
+        params = run_sgd(grad_loss, epochs, x, stepsize, alpha, batchsize, n)
 
-    def test_norms(self):
+        # find the range of the last 50% of the iterations
+        length = len(params)
+        x_iterate_average = (
+            self.find_norm(x_star, np.mean(params[length // 2 :]))
+        ) ** 2
+        x_iterate = self.find_norm(x_star, params[length - 1]) ** 2
+        print(f"The Norm for x_iterate is - \n {x_iterate}")
+        print(f"The Norm for iterate average is - \n {x_iterate_average}")
+        print("\n")
+        return x_iterate, x_iterate_average
+
+    # Run multiple experiments to find the best number of epochs
+    def find_best_num_epochs(self) -> None:
+        epochs = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 100, 200, 500]
         x_star, grad_sgd_loss = self.estimate_x_star()
-        # call estimate_x_tilda_k
-        x_iterate, x_iterate_average = self.estimate_x_tilda_k(
-            grad_sgd_loss,
-            self.B,
-            self.N,
-            self.ETA,
-            10,
-        )
-        print(f"x_iterate- \n {x_iterate}")
-        norm_x_star, norm_x_tilda_k = self.find_norm(
-            x_star, x_iterate, x_iterate_average
-        )
-
-    def find_best_num_epochs(self):
-        epoch_increase = 5
-        epoch1 = [i for i in range(1, 100, epoch_increase)]
-        epoch2 = [200, 300, 400]
-
-        x_star, grad_sgd_loss = self.estimate_x_star()
-        store_x_star = [0] * len(epoch1) + [0] * len(epoch2)
-        store_x_tilda_k = [0] * len(epoch1) + [0] * len(epoch2)
-
-        for idx, epoch in enumerate(epoch1):
+        for epoch in epochs:
+            print(f"epoch- \n {epoch}")
             x_iterate, x_iterate_average = self.estimate_x_tilda_k(
                 grad_sgd_loss,
                 self.B,
                 self.N,
                 self.ETA,
                 epoch,
+                x_star,
             )
-            norm_x_star, norm_x_tilda_k = self.find_norm(
-                x_star, x_iterate, x_iterate_average
-            )
-            store_x_star[idx] = norm_x_star
-            store_x_tilda_k[idx] = norm_x_tilda_k
-        epoch1_len = len(epoch1)
-        for idx, epoch in enumerate(epoch2):
-            x_iterate, x_iterate_average = self.estimate_x_tilda_k(
-                grad_sgd_loss,
-                self.B,
-                self.N,
-                self.ETA,
-                epoch,
-            )
-            norm_x_star, norm_x_tilda_k = self.find_norm(
-                x_star, x_iterate, x_iterate_average
-            )
-            store_x_star[idx + epoch1_len] = norm_x_star
-            store_x_tilda_k[idx + epoch1_len] = norm_x_tilda_k
-        print(f"store_x_star- \n {store_x_star}")
-        print(f"store_x_tilda_k- \n {store_x_tilda_k}")
 
+    def test_initialization(self) -> None:
+        x_star, grad_sgd_loss = self.estimate_x_star()
+        init_param = np.zeros(self.D + 1)
+        init_param_test_matrix = np.array(
+            [init_param + np.random.normal(0, 1, self.D + 1) for i in range(100)]
+        )
+        init_param_multivariate_normal = np.array(
+            [
+                np.random.multivariate_normal(init_param, np.identity(self.D + 1))
+                for i in range(100)
+            ]
+        )
+        init_param_uniform = np.array(
+            [np.random.uniform(-1, 1, self.D + 1) for i in range(100)]
+        )
+        norms_vec = np.zeros(100)
+        max_change, min_change, average_change = 0, 0, 0
+        max_norm, min_norm = 0, 0
+        for i in range(len(init_param_multivariate_normal)):
+            norms_vec[i] = (
+                self.find_norm(x_star, init_param_multivariate_normal[i]) ** 2
+            )
+            if i == 0:
+                min_norm = norms_vec[i]
+            if i > 0:
+                if norms_vec[i] - norms_vec[i - 1] > max_change:
+                    max_change = norms_vec[i] - norms_vec[i - 1]
+                if norms_vec[i] - norms_vec[i - 1] < min_change:
+                    min_change = norms_vec[i] - norms_vec[i - 1]
+            if norms_vec[i] > max_norm:
+                max_norm = norms_vec[i]
+            if norms_vec[i] < min_norm:
+                min_norm = norms_vec[i]
+
+            print(
+                f"Iteration {i}\t, norm is {norms_vec[i]} \t, \ninit_param is {init_param_multivariate_normal[i]}\n"
+            )
+        average_change = np.mean(norms_vec)
+        # find quintiles
+        print(f"Quintiles are as follows: \n {np.quantile(norms_vec, [0.2, 0.4, 0.6, 0.8])}")
+
+        print(f"Statistics are as follows: \n max_change: {max_change} \n min_change: {min_change} \n average_norm: {average_change} \n min_norm: {min_norm} \n max_norm: {max_norm}")
 
 def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
     # experiments.init_param_test()
     # experiments.find_best_num_epochs()
-    experiments.test_norms()
+    experiments.test_initialization()
 
 
 main()
