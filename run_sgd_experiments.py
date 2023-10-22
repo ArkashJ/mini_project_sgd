@@ -251,6 +251,14 @@ class run_experiments:
         )
 
 
+"""
+TODO: function for stats
+TODO: function for plotting 
+TODO: function for getting x_*
+TODO: function for changing batchsize
+"""
+
+
 def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
     # experiments.init_param_test()
