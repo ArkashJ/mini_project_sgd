@@ -40,7 +40,7 @@ def generate_data(n, d, seed):
 
 def run_sgd(
     grad_loss, epochs, init_param, init_stepsize, stepsize_decayrate, batchsize, n
-):
+    ):
     k = (epochs * n) // batchsize
     d = init_param.size
     paramiters = np.zeros((k + 1, d))
@@ -50,7 +50,7 @@ def run_sgd(
         stepsize = init_stepsize / (k + 1) ** stepsize_decayrate
         paramiters[k + 1] = paramiters[k] - stepsize * grad_loss(paramiters[k], inds)
     return paramiters
-    
+
 
 
 def plot_iterates_and_squared_errors(
@@ -94,3 +94,5 @@ def plot_iterates_and_squared_errors(
     plt.yscale("log")
     sns.despine()
     plt.show()
+
+   

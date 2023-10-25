@@ -26,49 +26,31 @@ class run_experiments:
         self.ETA_0 = ETA_0
         self.ALPHA = ALPHA
         self.B = B
-
-    def print_constants(self) -> None:
-        print(
-            f"Batch size: {self.B}\n"
-            f"Number of samples: {self.N}\n"
-            f"Number of features: {self.D}\n"
-            f"Degrees of freedom: {self.NU}\n"
-            f"Initial step size: {self.ETA_0}\n"
-            f"Decay rate: {self.ALPHA}\n"
-            f"step size: {self.ETA}\n"
-        )
+        self.true_beta = None
+    
+        
+    def store_true_beta(self, beta) -> np.ndarray:
+        self.true_beta = beta
 
     # Get the sgd_loss, grad_sgd_loss for generated data
     def generate_param_and_sgd(self) -> tuple:
         generate_seed = random.randint(0, 100)
         true_beta, Y, Z = generate_data(self.N, self.D, generate_seed)
         sgd_loss, grad_sgd_loss = make_sgd_robust_loss(Y, Z, self.NU)
+        self.store_true_beta(true_beta)
         init_param = np.zeros(self.D + 1)
         return sgd_loss, grad_sgd_loss, init_param
 
-    # Helper function to find the norm
-    def find_norm(
-        self,
-        x_star: np.ndarray,
-        iterate_params: np.ndarray,
-    ) -> float:
-        x_iterate = np.linalg.norm(x_star - iterate_params)
-        return x_iterate
-
-    # x_start = argmin (1/N)* sum(robust_loss(psi, beta, nu, Y, Z)) + (1/2N)*sum(beta**2)
+    
     def estimate_x_star(self) -> Optional[np.ndarray]:
         try:
-            # book page 7, https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize
             sgd_loss, grad_sgd_loss, init_param = self.generate_param_and_sgd()
-
             res_minimize = sp.optimize.minimize(
                 sgd_loss,
                 init_param,
                 args=(np.arange(self.N),),
             )
-
             print(f"res_minimize.x- \n {res_minimize.x}")
-
             return res_minimize.x, grad_sgd_loss
         except ValueError as e:
             print("Error in estimate_x_star")
@@ -88,25 +70,45 @@ class run_experiments:
         avg_range: float = 0.5,
     ) -> np.ndarray:
         params = run_sgd(grad_loss, epochs, x, stepsize, alpha, batchsize, n)
-
-        # find the range of the last 50% of the iterations
+        x_k, x_k_iterate = np.zeros(len(params)), np.zeros(len(params))
         length = len(params)
-        x_iterate_average = (
-            self.find_norm(x_star, np.mean(params[length // 2 :]))
-        ) ** 2
-        x_iterate = self.find_norm(x_star, params[length - 1]) ** 2
-        print(f"The Norm for x_iterate is - \n {x_iterate}")
-        print(f"The Norm for iterate average is - \n {x_iterate_average}")
-        print("\n")
-        return x_iterate, x_iterate_average
-
+        length_row = len(params[0])
+        for i in range(length):
+            x_k[i] = params[i][-1] 
+            x_k_iterate[i] = np.mean(params[i][int(length_row* avg_range) :], axis=0)
+    
+        print("length of x_k is ", len(x_k))
+        print("length of x_k_iterate is ", len(x_k_iterate))
+        
+        
+        plot_iterates_and_squared_errors(
+            x_k,
+            self.true_beta,
+            x_star,
+            skip_epochs=0,
+            epochs=epochs,
+            N=self.N,
+            batchsize=self.B,
+            include_psi=True,
+        )
+        plot_iterates_and_squared_errors(
+            x_k_iterate,
+            self.true_beta,
+            x_star,
+            skip_epochs=0,
+            epochs=epochs,
+            N=self.N,
+            batchsize=self.B,
+            include_psi=True,
+        )
     # Run multiple experiments to find the best number of epochs
     def find_best_num_epochs(self) -> None:
         epochs = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 100, 200, 500]
         x_star, grad_sgd_loss = self.estimate_x_star()
+    
         for epoch in tqdm(epochs):
             print(f"epoch- \n {epoch}")
-            x_iterate, x_iterate_average = self.estimate_x_tilda_k(
+            self.estimate_x_tilda_k(
                 grad_sgd_loss,
                 self.B,
                 self.N,
@@ -114,6 +116,7 @@ class run_experiments:
                 epoch,
                 x_star,
             )
+ 
 
     # Given a list of initializations, find the norm^2 for each of them
     def test_initialization(self, init_param_vec: np.ndarray) -> None:
@@ -273,12 +276,11 @@ TODO: function for changing batchsize
 def main():
     experiments = run_experiments(N, D, NU, ETA, ETA_0, ALPHA, B)
     # experiments.init_param_test()
-    # experiments.find_best_num_epochs()
+    experiments.find_best_num_epochs()
     # experiments.find_best_initilization_param()
     # experiments.changing_stepsize_initstepsize_decayrate()
     # experiments.decreasing_stepsize()
     # experiments.changing_loss()
-    experiments.changing_gradient_noise()
-
-
+    #experiments.changing_gradient_noise()
+    
 main()
