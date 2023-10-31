@@ -1,7 +1,7 @@
-from autograd import grad
 import autograd.numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from autograd import grad
 
 
 def _robust_loss(psi, beta, nu, y, z):
@@ -40,7 +40,7 @@ def generate_data(n, d, seed):
 
 def run_sgd(
     grad_loss, epochs, init_param, init_stepsize, stepsize_decayrate, batchsize, n
-    ):
+):
     k = (epochs * n) // batchsize
     d = init_param.size
     paramiters = np.zeros((k + 1, d))
@@ -52,7 +52,6 @@ def run_sgd(
     return paramiters
 
 
-
 def plot_iterates_and_squared_errors(
     paramiters,
     true_beta,
@@ -61,6 +60,7 @@ def plot_iterates_and_squared_errors(
     epochs,
     N,
     batchsize,
+    fig_name,
     include_psi=True,
 ):
     D = true_beta.size
@@ -77,6 +77,8 @@ def plot_iterates_and_squared_errors(
     plt.plot(np.array(D * [[xs[0], xs[-1]]]).T, np.array([true_beta, true_beta]), ":")
     plt.xlabel("epoch")
     plt.ylabel("parameter value")
+    plt.savefig("{}.jpg".format(fig_name), bbox_inches="tight")
+
     plt.legend(
         param_names,
         bbox_to_anchor=(0, 1.02, 1, 0.2),
@@ -92,7 +94,7 @@ def plot_iterates_and_squared_errors(
     plt.xlabel("epoch")
     plt.ylabel(r"$\|x_k - x_{\star}\|_2^2$")
     plt.yscale("log")
+    plt.savefig("{}_error.jpg".format(fig_name), bbox_inches="tight")
+    # automatically close figures to avoid memory leak
     sns.despine()
     plt.show()
-
-   
