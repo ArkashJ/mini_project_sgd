@@ -336,12 +336,55 @@ def changing_batch_size_B():
             True,
         )
 
+# effect of using the standard linear regression loss (that is, setting ν = ∞)
+def standard_linear_regression_loss():
+    init_param = np.ones(D + 1)
+    true_beta, Y, Z = generate_params()
+    NU_vec = [100, 1000, 10000, np.inf]
+    
+    for NU in NU_vec:
+        sgd_loss, grad_sgd = get_sgd_and_sgd_grad(Y, Z, NU)
+        x_star = estimate_x_star(sgd_loss, init_param)
+        epochs = 20
+        params = run_sgd(
+            grad_sgd,
+            epochs,
+            init_param=init_param,
+            init_stepsize=0.2,
+            stepsize_decayrate=0,
+            batchsize=B,
+            n=N,
+        )
+        x_k = params
+        iterate_average = get_iterate_average(params)
+        plot_iterates_and_squared_errors(
+            x_k,
+            true_beta,
+            x_star,
+            0,
+            epochs,
+            N,
+            B,
+            "x_k_standard_linear_regression_loss_{}".format(NU),
+            True,
+        )
+        plot_iterates_and_squared_errors(
+            iterate_average,
+            true_beta,
+            x_star,
+            0,
+            epochs,
+            N,
+            B,
+            "iterate_average_standard_linear_regression_loss_{}".format(NU),
+            True,
+        )
 
 def main():
     # run_multiple_epochs()
     # run_different_initialization()
     # run_with_multiple_stepsize_decayrate()
-    changing_batch_size_B()
-
+    #changing_batch_size_B()
+    standard_linear_regression_loss()
 
 main()
