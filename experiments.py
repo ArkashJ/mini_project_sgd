@@ -294,22 +294,21 @@ def run_with_multiple_stepsize_decayrate():
 
 
 def changing_batch_size_B():
-    batch_size_list = [1, 10, 25, 50, 100, 200]
+    batch_size_list = [10, 25, 50, 100, 200]
     init_param = np.ones(D + 1)
     true_beta, Y, Z = generate_params()
     sgd_loss, grad_sgd = get_sgd_and_sgd_grad(Y, Z, NU)
     x_star = estimate_x_star(sgd_loss, init_param)
     epochs = 20
-
-    print("printing for batch size ")
-    for batch_size in batch_size_list:
+    print("here")
+    for B in batch_size_list:
         params = run_sgd(
             grad_sgd,
             epochs,
             init_param=init_param,
-            init_stepsize=ETA,
-            stepsize_decayrate=ALPHA,
-            batchsize=batch_size,
+            init_stepsize=0.2,
+            stepsize_decayrate=0,
+            batchsize=B,
             n=N,
         )
         x_k = params
@@ -321,11 +320,10 @@ def changing_batch_size_B():
             0,
             epochs,
             N,
-            batch_size,
-            "x_k_batch_size_{}".format(batch_size),
+            B,
+            "x_k_batch_size_{}".format(B),
             True,
         )
-
         plot_iterates_and_squared_errors(
             iterate_average,
             true_beta,
@@ -333,8 +331,8 @@ def changing_batch_size_B():
             0,
             epochs,
             N,
-            batch_size,
-            "iterate_average_batch_size_{}".format(batch_size),
+            B,
+            "iterate_average_batch_size_{}".format(B),
             True,
         )
 
