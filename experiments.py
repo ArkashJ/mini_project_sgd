@@ -9,7 +9,7 @@ from sgd_robust_regression import *
 # define constants
 NU: int = 5
 ETA: float = 0.2
-ETA_0: float = 0.2
+ETA_0: float = 5
 ALPHA: float = 0.51
 B: int = 10
 N: int = 10000
@@ -160,10 +160,190 @@ def run_different_initialization():
         )
 
 
+def run_with_multiple_stepsize_decayrate():
+    decay_rate_list = [0.01, 0.1, 0.25, 0.4, 0.51, 0.8, 0.9, 0.99]
+    init_stepsize_list = [0.5, 0.75, 1, 2, 5]
+
+    change_decay_with_stepsize = [
+        [(0.25, 0.5), (0.25, 0.75), (0.25, 2)],
+        [(0.4, 0.5), (0.4, 0.75), (0.4, 2)],
+        [(0.8, 0.5), (0.8, 0.75), (0.8, 2)],
+    ]
+
+    init_param = np.ones(D + 1)
+    true_beta, Y, Z = generate_params()
+    sgd_loss, grad_sgd = get_sgd_and_sgd_grad(Y, Z, NU)
+    x_star = estimate_x_star(sgd_loss, init_param)
+    epochs = 20
+
+    for decay_rate in decay_rate_list:
+        params = run_sgd(
+            grad_sgd,
+            epochs,
+            init_param=init_param,
+            init_stepsize=ETA,
+            stepsize_decayrate=decay_rate,
+            batchsize=B,
+            n=N,
+        )
+        x_k = params
+        iterate_average = get_iterate_average(params)
+        print(f"printing for decay rate - {decay_rate}")
+        plot_iterates_and_squared_errors(
+            x_k,
+            true_beta,
+            x_star,
+            0,
+            epochs,
+            N,
+            B,
+            "x_k_decay_{}".format(decay_rate),
+            True,
+        )
+
+        plot_iterates_and_squared_errors(
+            iterate_average,
+            true_beta,
+            x_star,
+            0,
+            epochs,
+            N,
+            B,
+            "iterate_average_decay_{}".format(decay_rate),
+            True,
+        )
+
+    for init_stepsize in init_stepsize_list:
+        params = run_sgd(
+            grad_sgd,
+            epochs,
+            init_param=init_param,
+            init_stepsize=init_stepsize,
+            stepsize_decayrate=ALPHA,
+            batchsize=B,
+            n=N,
+        )
+        x_k = params
+        iterate_average = get_iterate_average(params)
+        print(f"printing for init stepsize - {init_stepsize}")
+        plot_iterates_and_squared_errors(
+            x_k,
+            true_beta,
+            x_star,
+            0,
+            epochs,
+            N,
+            B,
+            "x_k_init_stepsize_{}".format(init_stepsize),
+            True,
+        )
+
+        plot_iterates_and_squared_errors(
+            iterate_average,
+            true_beta,
+            x_star,
+            0,
+            epochs,
+            N,
+            B,
+            "iterate_average_init_stepsize_{}".format(init_stepsize),
+            True,
+        )
+
+    for arr in change_decay_with_stepsize:
+        for init_stepsize, decay_rate in arr:
+            params = run_sgd(
+                grad_sgd,
+                epochs,
+                init_param=init_param,
+                init_stepsize=init_stepsize,
+                stepsize_decayrate=decay_rate,
+                batchsize=B,
+                n=N,
+            )
+            x_k = params
+            iterate_average = get_iterate_average(params)
+            print(
+                f"printing for init stepsize - {init_stepsize} and decay rate - {decay_rate}"
+            )
+            plot_iterates_and_squared_errors(
+                x_k,
+                true_beta,
+                x_star,
+                0,
+                epochs,
+                N,
+                B,
+                "x_k_init_stepsize_{}_decay_{}".format(init_stepsize, decay_rate),
+                True,
+            )
+
+            plot_iterates_and_squared_errors(
+                iterate_average,
+                true_beta,
+                x_star,
+                0,
+                epochs,
+                N,
+                B,
+                "iterate_average_init_stepsize_{}_decay_{}".format(
+                    init_stepsize, decay_rate
+                ),
+                True,
+            )
+
+
+def changing_batch_size_B():
+    batch_size_list = [1, 10, 25, 50, 100, 200]
+    init_param = np.ones(D + 1)
+    true_beta, Y, Z = generate_params()
+    sgd_loss, grad_sgd = get_sgd_and_sgd_grad(Y, Z, NU)
+    x_star = estimate_x_star(sgd_loss, init_param)
+    epochs = 20
+
+    print("printing for batch size ")
+    for batch_size in batch_size_list:
+        params = run_sgd(
+            grad_sgd,
+            epochs,
+            init_param=init_param,
+            init_stepsize=ETA,
+            stepsize_decayrate=ALPHA,
+            batchsize=batch_size,
+            n=N,
+        )
+        x_k = params
+        iterate_average = get_iterate_average(params)
+        plot_iterates_and_squared_errors(
+            x_k,
+            true_beta,
+            x_star,
+            0,
+            epochs,
+            N,
+            batch_size,
+            "x_k_batch_size_{}".format(batch_size),
+            True,
+        )
+
+        plot_iterates_and_squared_errors(
+            iterate_average,
+            true_beta,
+            x_star,
+            0,
+            epochs,
+            N,
+            batch_size,
+            "iterate_average_batch_size_{}".format(batch_size),
+            True,
+        )
+
+
 def main():
     # run_multiple_epochs()
-    run_different_initialization()
+    # run_different_initialization()
+    # run_with_multiple_stepsize_decayrate()
+    changing_batch_size_B()
 
 
 main()
-    

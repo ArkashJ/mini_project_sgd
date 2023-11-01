@@ -1,10 +1,12 @@
-import autograd.numpy as np
-from sgd_robust_regression import *
-import scipy as sp
-from typing import Optional
-import random
 import math
+import random
+from typing import Optional
+
+import autograd.numpy as np
+import scipy as sp
 from tqdm import tqdm
+
+from sgd_robust_regression import *
 
 # define constants
 NU: int = 5
@@ -27,8 +29,7 @@ class run_experiments:
         self.ALPHA = ALPHA
         self.B = B
         self.true_beta = None
-    
-        
+
     def store_true_beta(self, beta) -> np.ndarray:
         self.true_beta = beta
 
@@ -41,7 +42,6 @@ class run_experiments:
         init_param = np.zeros(self.D + 1)
         return sgd_loss, grad_sgd_loss, init_param
 
-    
     def estimate_x_star(self) -> Optional[np.ndarray]:
         try:
             sgd_loss, grad_sgd_loss, init_param = self.generate_param_and_sgd()
@@ -74,13 +74,12 @@ class run_experiments:
         length = len(params)
         length_row = len(params[0])
         for i in range(length):
-            x_k[i] = params[i][-1] 
-            x_k_iterate[i] = np.mean(params[i][int(length_row* avg_range) :], axis=0)
-    
+            x_k[i] = params[i][-1]
+            x_k_iterate[i] = np.mean(params[i][int(length_row * avg_range) :], axis=0)
+
         print("length of x_k is ", len(x_k))
         print("length of x_k_iterate is ", len(x_k_iterate))
-        
-        
+
         plot_iterates_and_squared_errors(
             x_k,
             self.true_beta,
@@ -101,11 +100,12 @@ class run_experiments:
             batchsize=self.B,
             include_psi=True,
         )
+
     # Run multiple experiments to find the best number of epochs
     def find_best_num_epochs(self) -> None:
         epochs = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 100, 200, 500]
         x_star, grad_sgd_loss = self.estimate_x_star()
-    
+
         for epoch in tqdm(epochs):
             print(f"epoch- \n {epoch}")
             self.estimate_x_tilda_k(
@@ -116,7 +116,6 @@ class run_experiments:
                 epoch,
                 x_star,
             )
- 
 
     # Given a list of initializations, find the norm^2 for each of them
     def test_initialization(self, init_param_vec: np.ndarray) -> None:
@@ -281,6 +280,7 @@ def main():
     # experiments.changing_stepsize_initstepsize_decayrate()
     # experiments.decreasing_stepsize()
     # experiments.changing_loss()
-    #experiments.changing_gradient_noise()
-    
+    # experiments.changing_gradient_noise()
+
+
 main()
