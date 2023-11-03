@@ -2,6 +2,7 @@ import random
 from typing import Optional
 
 import autograd.numpy as np
+import matplotlib.pyplot as plt
 import scipy as sp
 
 from sgd_robust_regression import *
@@ -53,8 +54,8 @@ def get_params(epochs, grad_loss, init_param) -> np.ndarray:
         grad_loss,
         epochs,
         init_param=init_param,
-        init_stepsize=ETA,
-        stepsize_decayrate=0,
+        init_stepsize=ETA_0,
+        stepsize_decayrate=ALPHA,
         batchsize=B,
         n=N,
     )
@@ -72,7 +73,7 @@ def get_iterate_average(params: np.ndarray) -> np.ndarray:
 
 # run multiple epochs and plot the results
 def run_multiple_epochs():
-    epochs_list = [5, 10, 15, 20, 25, 50, 100]
+    epochs_list = [5, 10, 25, 50, 100]
     init_param = np.zeros(D + 1)
     true_beta, Y, Z = generate_params()
     sgd_loss, grad_sgd = get_sgd_and_sgd_grad(Y, Z, NU)
@@ -101,22 +102,25 @@ def run_multiple_epochs():
 
 def run_different_initialization():
     multiplication_factor_for_init_param_vec = [
-        -10,
+        -250,
+        -200,
+        -100,
+        -50,
+        -25,
         -5,
         -2,
         -0.1,
-        0.1,
         0.5,
-        1,
-        2,
         5,
         10,
-        25,
         50,
+        80,
+        100,
+        200,
     ]
 
     results_dict = {}
-    epochs = 20
+    epochs = 100
     for factor in multiplication_factor_for_init_param_vec:
         init_param = np.ones(D + 1) * factor
         true_beta, Y, Z = generate_params()
@@ -131,45 +135,40 @@ def run_different_initialization():
             np.linalg.norm(init_param - x_star[np.newaxis, :], axis=1) ** 2
         )
         results_dict[factor] = distance_between_init_param_and_optimal
-        plot_iterates_and_squared_errors(
-            x_k,
-            true_beta,
-            x_star,
-            0,
-            epochs,
-            N,
-            B,
-            "x_k_{}_{}".format(epochs, factor),
-            True,
-        )
-
-        distance_between_init_param_and_optimal = (
-            np.linalg.norm(init_param - x_star[np.newaxis, :], axis=1) ** 2
-        )
-        results_dict[factor] = distance_between_init_param_and_optimal
-        plot_iterates_and_squared_errors(
-            iterate_average,
-            true_beta,
-            x_star,
-            0,
-            epochs,
-            N,
-            B,
-            "iterate_average_{}_{}".format(epochs, factor),
-            True,
-        )
+        # plot_iterates_and_squared_errors(
+        #     x_k,
+        #     true_beta,
+        #     x_star,
+        #     0,
+        #     epochs,
+        #     N,
+        #     B,
+        #     "x_k_{}_{}".format(epochs, factor),
+        #     True,
+        # )
+        #
+        # distance_between_init_param_and_optimal = (
+        #     np.linalg.norm(init_param - x_star[np.newaxis, :], axis=1) ** 2
+        # )
+        # results_dict[factor] = distance_between_init_param_and_optimal
+        # plot_iterates_and_squared_errors(
+        #     iterate_average,
+        #     true_beta,
+        #     x_star,
+        #     0,
+        #     epochs,
+        #     N,
+        #     B,
+        #     "iterate_average_{}_{}".format(epochs, factor),
+        #     True,
+        # )
+    # plot the results
+    return results_dict
 
 
 def run_with_multiple_stepsize_decayrate():
-    decay_rate_list = [0.01, 0.1, 0.25, 0.4, 0.51, 0.8, 0.9, 0.99]
-    init_stepsize_list = [0.5, 0.75, 1, 2, 5]
-
-    change_decay_with_stepsize = [
-        [(0.25, 0.5), (0.25, 0.75), (0.25, 2)],
-        [(0.4, 0.5), (0.4, 0.75), (0.4, 2)],
-        [(0.8, 0.5), (0.8, 0.75), (0.8, 2)],
-    ]
-
+    decay_rate_list = [0.01, 0.4, 0.8, 0.9, 0.99]
+    init_stepsize_list = [0.5, 0.75, 2, 5]
     init_param = np.ones(D + 1)
     true_beta, Y, Z = generate_params()
     sgd_loss, grad_sgd = get_sgd_and_sgd_grad(Y, Z, NU)
@@ -200,18 +199,18 @@ def run_with_multiple_stepsize_decayrate():
             "x_k_decay_{}".format(decay_rate),
             True,
         )
-
-        plot_iterates_and_squared_errors(
-            iterate_average,
-            true_beta,
-            x_star,
-            0,
-            epochs,
-            N,
-            B,
-            "iterate_average_decay_{}".format(decay_rate),
-            True,
-        )
+        #
+        # plot_iterates_and_squared_errors(
+        #     iterate_average,
+        #     true_beta,
+        #     x_star,
+        #     0,
+        #     epochs,
+        #     N,
+        #     B,
+        #     "iterate_average_decay_{}".format(decay_rate),
+        #     True,
+        # )
 
     for init_stepsize in init_stepsize_list:
         params = run_sgd(
@@ -237,69 +236,29 @@ def run_with_multiple_stepsize_decayrate():
             "x_k_init_stepsize_{}".format(init_stepsize),
             True,
         )
-
-        plot_iterates_and_squared_errors(
-            iterate_average,
-            true_beta,
-            x_star,
-            0,
-            epochs,
-            N,
-            B,
-            "iterate_average_init_stepsize_{}".format(init_stepsize),
-            True,
-        )
-
-    for arr in change_decay_with_stepsize:
-        for init_stepsize, decay_rate in arr:
-            params = run_sgd(
-                grad_sgd,
-                epochs,
-                init_param=init_param,
-                init_stepsize=init_stepsize,
-                stepsize_decayrate=decay_rate,
-                batchsize=B,
-                n=N,
-            )
-            x_k = params
-            iterate_average = get_iterate_average(params)
-            print(
-                f"printing for init stepsize - {init_stepsize} and decay rate - {decay_rate}"
-            )
-            plot_iterates_and_squared_errors(
-                x_k,
-                true_beta,
-                x_star,
-                0,
-                epochs,
-                N,
-                B,
-                "x_k_init_stepsize_{}_decay_{}".format(init_stepsize, decay_rate),
-                True,
-            )
-
-            plot_iterates_and_squared_errors(
-                iterate_average,
-                true_beta,
-                x_star,
-                0,
-                epochs,
-                N,
-                B,
-                "iterate_average_init_stepsize_{}_decay_{}".format(
-                    init_stepsize, decay_rate
-                ),
-                True,
-            )
+        #
+        # plot_iterates_and_squared_errors(
+        #     iterate_average,
+        #     true_beta,
+        #     x_star,
+        #     0,
+        #     epochs,
+        #     N,
+        #     B,
+        #     "iterate_average_init_stepsize_{}".format(init_stepsize),
+        #     True,
+        # )
+        #
 
 
 def changing_batch_size_B():
-    batch_size_list = [10, 25, 50, 100, 200]
+    # batch_size_list = [20, 100, 10000]
+    batch_size_list = [10000]
     init_param = np.ones(D + 1)
     true_beta, Y, Z = generate_params()
     sgd_loss, grad_sgd = get_sgd_and_sgd_grad(Y, Z, NU)
     x_star = estimate_x_star(sgd_loss, init_param)
-    epochs = 20
+    epochs = 10000
     print("here")
     for B in batch_size_list:
         params = run_sgd(
@@ -336,16 +295,17 @@ def changing_batch_size_B():
             True,
         )
 
+
 # effect of using the standard linear regression loss (that is, setting ν = ∞)
 def standard_linear_regression_loss():
     init_param = np.ones(D + 1)
     true_beta, Y, Z = generate_params()
-    NU_vec = [100, 1000, 10000, np.inf]
-    
+    NU_vec = [1000, 10000, np.inf]
+
+    epochs = 100
     for NU in NU_vec:
         sgd_loss, grad_sgd = get_sgd_and_sgd_grad(Y, Z, NU)
         x_star = estimate_x_star(sgd_loss, init_param)
-        epochs = 20
         params = run_sgd(
             grad_sgd,
             epochs,
@@ -380,11 +340,13 @@ def standard_linear_regression_loss():
             True,
         )
 
+
 def main():
     # run_multiple_epochs()
-    # run_different_initialization()
+    print(run_different_initialization())
     # run_with_multiple_stepsize_decayrate()
-    #changing_batch_size_B()
-    standard_linear_regression_loss()
+    # changing_batch_size_B()
+    # standard_linear_regression_loss()
+
 
 main()

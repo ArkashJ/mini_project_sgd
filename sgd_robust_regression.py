@@ -37,6 +37,7 @@ def generate_data(n, d, seed):
     y = y - np.mean(y)
     return true_beta, y, z
 
+
 def run_sgd(
     grad_loss, epochs, init_param, init_stepsize, stepsize_decayrate, batchsize, n
 ):
@@ -78,7 +79,6 @@ def plot_iterates_and_squared_errors(
     plt.ylabel("parameter value")
     plt.savefig("{}.jpg".format(fig_name), bbox_inches="tight")
     # set name of figure
-    plt.title("{}".format(fig_name))
     plt.legend(
         param_names,
         bbox_to_anchor=(0, 1.02, 1, 0.2),
@@ -98,4 +98,3 @@ def plot_iterates_and_squared_errors(
     # automatically close figures to avoid memory leak
     sns.despine()
     plt.show()
-    plt.title("{}".format(fig_name))
