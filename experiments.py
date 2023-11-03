@@ -343,8 +343,8 @@ def standard_linear_regression_loss():
 
 def main():
     # run_multiple_epochs()
-    print(run_different_initialization())
-    # run_with_multiple_stepsize_decayrate()
+    #print(run_different_initialization())
+    run_with_multiple_stepsize_decayrate()
     # changing_batch_size_B()
     # standard_linear_regression_loss()
 
